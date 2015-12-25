@@ -1,0 +1,9 @@
+-cmd haxelib newrepo
+
+--next
+
+-cp src
+-lib waxe
+-main Main
+
+-x waud-audio-sprite
