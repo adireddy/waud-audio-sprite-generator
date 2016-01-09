@@ -243,6 +243,7 @@ module.exports = function(files) {
             })
         }, function(err) {
             if (err) {
+                console.log(err)
                 return callback(new Error('Error adding file'))
             }
             async.forEachSeries(Object.keys(formats), function(ext, cb) {

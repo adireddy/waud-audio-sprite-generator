@@ -1,5 +1,11 @@
 package ui;
 
+import sys.FileSystem;
+import wx.MessageDialog;
+import wx.CheckBox;
+import sys.io.Process;
+import sys.io.File;
+import wx.DirDialog;
 import wx.Point;
 import wx.DC;
 import wx.Button;
@@ -17,6 +23,7 @@ import wx.App;
 import wx.Frame;
 import wx.Window;
 import wx.Panel;
+import haxe.Timer;
 
 class UI {
 
@@ -25,7 +32,7 @@ class UI {
 	var mDrawArea:Window;
 
 	public function new(node:Bool, ffmpeg:Bool) {
-		mFrame = Frame.create(null, null, "Waud Audio Sprite Generator", null, { width: 800, height: 600 });
+		mFrame = Frame.create(null, null, "Waud Audio Sprite Generator", null, { width: 800, height: 400 });
 		mFrame.onSize = function(evt) { layout(); evt.skip = true; }
 
 		mWindow = Panel.create(mFrame);
@@ -43,19 +50,131 @@ class UI {
 			verticalSizer.add(supportTxt, 0, Sizer.ALIGN_CENTRE_VERTICAL);
 		}
 		else {
+			var verticalSizer:FlexGridSizer = FlexGridSizer.create(3, 2, 10, 10);
+			var nodeModulesBtn:Button = Button.create(mWindow, null, " Install Node Modules ", new Point(320, 10));
+			nodeModulesBtn.onClick = function(evt) {
+				nodeModulesBtn.label = " Installing... ";
+				var installCnt = 0;
+				var mod = new Process("npm", ["install", "underscore"]);
+				installCnt += mod.exitCode();
+				mod.kill();
+				mod = new Process("npm", ["install", "winston"]);
+				installCnt += mod.exitCode();
+				mod.kill();
+				mod = new Process("npm", ["install", "async"]);
+				installCnt += mod.exitCode();
+				mod.kill();
+				mod = new Process("npm", ["install", "optimist"]);
+				installCnt += mod.exitCode();
+				mod.kill();
+				mod = new Process("npm", ["install", "mkdirp"]);
+				installCnt += mod.exitCode();
+				mod.kill();
+				nodeModulesBtn.label = (installCnt == 0) ? "Success" : "Failed";
+				nodeModulesBtn.onClick = null;
+			};
 
-			mDrawArea = Panel.create(mWindow);
+			var dirLabel:StaticText = StaticText.create(mWindow, null, "Select sounds directory:", new Point(30, 52));
+			var dirPath:TextCtrl = TextCtrl.create(mWindow, null, "", new Point(200, 50), { width: 465, height: 24 });
+			dirPath.value = FileSystem.fullPath("./");
+			var dirWindow:DirDialog = new DirDialog(mWindow, "Choose sounds folder", "./");
+			var browseBtn:Button = Button.create(mWindow, null, "Browse", new Point(675, 48));
+
+			var exportOption:StaticText = StaticText.create(mWindow, null, "Export format:", new Point(92, 90));
+			var m4a:CheckBox = CheckBox.create(mWindow, null, "M4A", new Point(200, 90));
+			var mp3:CheckBox = CheckBox.create(mWindow, null, "MP3", new Point(260, 90));
+			var ogg:CheckBox = CheckBox.create(mWindow, null, "OGG", new Point(320, 90));
+			var ac3:CheckBox = CheckBox.create(mWindow, null, "AC3", new Point(380, 90));
+			m4a.checked = mp3.checked = ogg.checked = ac3.checked = true;
+
+			var channelsLabel:StaticText = StaticText.create(mWindow, null, "Channels:", new Point(119, 117));
+			var channels:ComboBox = ComboBox.create(mWindow, null, "1", new Point(200, 115), { width: 30, height: 20 }, ["1", "2"]);
+			channels.fit();
+
+			browseBtn.onClick = function(evt) {
+				dirWindow.showModal();
+				dirPath.value = dirWindow.directory;
+				//App.quit();
+			}
+
+			var msgDialog:MessageDialog = new MessageDialog(mWindow, "", "Error");
+			var execBtn = Button.create(mWindow, null, " Generate Audio Sprite ", new Point(320, 300));
+
+			execBtn.onClick = function(evt) {
+				if (dirPath.value == "") {
+					msgDialog.caption = "Directory";
+					msgDialog.message = "Empty Sounds Directory";
+					msgDialog.showModal();
+				}
+
+				var dirContent = FileSystem.readDirectory(dirPath.value);
+				for (file in dirContent) {
+					if (file.indexOf(".m4a") > -1 || file.indexOf(".mp3") > -1 || file.indexOf(".ogg") > -1 || file.indexOf(".wav") > -1) {
+
+					}
+				}
+
+				var exportStr = [];
+				if (m4a.checked) exportStr.push("m4a");
+				if (mp3.checked) exportStr.push("mp3");
+				if (ogg.checked) exportStr.push("ogg");
+				if (ac3.checked) exportStr.push("ac3");
+
+				/*var mod = new Process("node", ["waudaudiosprite",
+				"-e", exportStr.join(","),
+				"-o", dirPath.value + "/sprite",
+				dirPath.value + "*//**//*.mp3"
+				]);*/
+
+				var mod = new Process("cd", [dirPath.value]);
+				mod = new Process("node", ["waudaudiosprite",
+				"-o " + "/sprite",
+				"-e " + exportStr.join(","),
+				"/*.mp3"
+				]);
+
+				/*Sys.command("node", ["waudaudiosprite",
+				"-o " + dirPath.value + "/sprite",
+				"-e " + exportStr.join(","),
+				dirPath.value + "*//*.mp3"
+				]);*/
+
+				trace("node waudaudiosprite -e " + exportStr.join(",") + " -o " + dirPath.value + "/sprite" + " " + dirPath.value + "/*.mp3");
+
+				//trace(mod.exitCode());
+
+				//--loop loop --autoplay loop
+				//logLabel.label = "" + mod.stdout;
+
+
+				//Sys.command("npm");
+				//Sys.getEnv("npm install underscore");
+				//trace(Sys.environment());
+				//mod.kill();
+				//node audiosprite --loop loop --autoplay loop -o assets/sprite -e m4a assets/*.mp3
+			}
+
+
+
+
+			//verticalSizer.add(dirPath, 0, Sizer.ALIGN_CENTRE_HORIZONTAL);
+
+
+
+			//var button_sizer:BoxSizer = BoxSizer.create(false);
+			//button_sizer.add(close);
+
+			/*mDrawArea = Panel.create(mWindow);
 			var vertical_sizer:FlexGridSizer = FlexGridSizer.create(null, 1);
 			vertical_sizer.addGrowableCol(0);
 			var items_sizer:FlexGridSizer = FlexGridSizer.create(null, 2);
-			var button_sizer:BoxSizer = BoxSizer.create(false);
+
 			vertical_sizer.add(items_sizer, 0, Sizer.EXPAND);
 			vertical_sizer.add(mDrawArea, 1, Sizer.EXPAND);
 			vertical_sizer.add(button_sizer, 0,
 			Sizer.ALIGN_CENTRE | Sizer.BORDER_TOP | Sizer.BORDER_BOTTOM, 10);
 			vertical_sizer.addGrowableRow(1);
-			var close = Button.create(mWindow, null, "Close");
-			button_sizer.add(close);
+
 
 			items_sizer.addGrowableCol(1, 1);
 			items_sizer.add(StaticText.create(mWindow, null, "TextCtrl"), 0, Sizer.ALIGN_CENTRE_VERTICAL);
@@ -70,9 +189,7 @@ class UI {
 			var text:TextCtrl = TextCtrl.create(mWindow, null, "Hello !");
 			items_sizer.add(text, 1, Sizer.EXPAND | Sizer.BORDER_ALL, 10);
 
-			mWindow.sizer = vertical_sizer;
-
-			close.onClick = function(_) App.quit();
+			mWindow.sizer = vertical_sizer;*/
 		}
 
 		/*
